@@ -11,6 +11,10 @@
 
 #include <stdint.h>
 
+#ifndef SPIRITS_MINIMUM_SIZE
+#define SPIRITS_MINIMUM_SIZE 1
+#endif
+
 uint64_t
 spirits_size(spirits_t* spirits, uint8_t only_this_node);
 

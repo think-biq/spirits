@@ -56,6 +56,7 @@ spirits_summon(spirits_t* spirits, uint64_t size) {
 	}
 
 	if (NULL == spirits) {
+		errno = EINVAL;
 		return 1;
 	}
 
@@ -70,7 +71,12 @@ spirits_summon(spirits_t* spirits, uint64_t size) {
 
 spirits_t*
 spirits_rift(spirits_t* spirits, uint64_t requested_size) {
-	if (NULL == spirits) return NULL;
+	if ((NULL == spirits) || (requested_size > spirits->size)) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	if (requested_size == spirits->size) return spirits;
 
 	spirits_t* splinter = __spirits_malloc(sizeof(spirits_t));
 	splinter->size = requested_size;
@@ -91,22 +97,29 @@ spirits_rift(spirits_t* spirits, uint64_t requested_size) {
 
 uint8_t
 spirits_unify_next(spirits_t* spirits) {
-	if (NULL == spirits->next) {
+	if (NULL == spirits) {
+		errno = EINVAL;
 		return 1;
 	}
 
 	spirits_t* next = spirits->next;
 	if (NULL == next) {
+		// Next is technically already unified.
 		return 2;
 	}
 
 	spirits->next = next->next;
+	// If there are spirits after the next.
 	if (NULL != spirits->next) {
+		// Let this successor point back to spirits to
+		//  skip the ones about to be discared.
 		spirits->next->prev = spirits;
 	}
 
+	// Reclaim rifted space.
 	spirits->size += next->size;
 
+	// Discard spirits.
 	next->size = 0;
 	next->offset = spirits->offset;
 	next->next = NULL;
@@ -120,22 +133,28 @@ void
 spirits_banish(spirits_t* spirits) {
 	if (NULL == spirits) return;
 
+	// Unify as long as there are more than one spirit.
 	while (0 == spirits_unify_next(spirits)) {}
 
+	// Finally invalidate this spirit.
 	spirits->offset = 0;
 	spirits->size = 0;
 	spirits->available = 1;
 	spirits->next = NULL;
-	spirits->prev = NULL;
+
+	// Previous is intentionally not invalidated, since one might banish a
+	// chain of spirits not from the head of the memory.
 }
 
 spirits_t*
 spirits_find_smallest_fit(spirits_t* spirits, uint64_t size) {
-	if (NULL == spirits) return NULL;
+	if (NULL == spirits) {
+		errno = EINVAL;
+		return NULL;
+	}
 
 	spirits_t* fit = NULL;
 	spirits_t* next = spirits;
-	uint8_t i = 0;
 	while (NULL != next) {
 		if (1 == next->available && size <= next->size) {
 			if (NULL == fit || fit->size > next->size) {
@@ -143,12 +162,7 @@ spirits_find_smallest_fit(spirits_t* spirits, uint64_t size) {
 			}
 		}
 
-		if (++i == 3) {
-			next = NULL;
-		}
-		else {
-			next = next->next;
-		}
+		next = next->next;
 	}
 
 	return fit;
@@ -174,29 +188,39 @@ spirits_condense(spirits_t* spirits) {
 
 uint8_t
 spirits_allocate(spirits_t* spirits, uint64_t* address, uint64_t size) {
-	if (NULL == spirits || NULL == address) return 1;
+	if (NULL == spirits || NULL == address) {
+		errno = EINVAL;
+		return 1;
+	}
 
 	spirits_t* fit = spirits_find_smallest_fit(spirits, size);
 	if (NULL == fit) {
+		// If no smallest fit found, pass over memory
+		// and condense neighbouring free spirits.
 		spirits_condense(spirits);
+		// Try again.
 		fit = spirits_find_smallest_fit(spirits, size);
+		// This time it's serious.
 		if (NULL == fit) {
+			errno = ENOMEM;			
 			return 1;
 		}
 	}
 
-	// if no smallest fit found, pass over memory and see if there are
-	// neighboring cells that are free and would fit the size
-
 	spirits_t* s;
-	if (size == fit->size) {
+	if (size == fit->size // If it fits exactly,
+	 || SPIRITS_MINIMUM_SIZE > (fit->size - size)) { // or is within min size.
+	 	// Use the found spirit.
 		s = fit;
 	}
 	else {
+		// Otherwise create a new spirit with the exact size by rifting.
 		s = spirits_rift(fit, size);	
 	}
 
+	// Indicate spirit is in use.
 	s->available = 0;
+	// And setup address.
 	*address = s->offset;
 	return 0;
 }
@@ -206,18 +230,24 @@ spirits_free(spirits_t* spirits, uint64_t address) {
 	if (NULL == spirits) return;
 
 	spirits_t* next = spirits;
-	while (next) {
+	while (NULL != next) {
+		// If we've found given address,
 		if (address == next->offset) {
+			// Mark spirit as available.
 			next->available = 1;
+			// Check out predecessor.
 			spirits_t* left = next->prev;
-			if (NULL != left && 1 == left->available) {
-				spirits_unify_next(left);
-				if (NULL != left->next && 1 == left->next->available) {
+			// See if we can unify with it.
+			if (NULL != left && left->available) {
+				// Unify until we hit a used spirit.
+				while (NULL != left->next && left->next->available) {
 					spirits_unify_next(left);
 				}
 			}
-			else if (NULL != next->next && 1 == next->available) {
-				spirits_unify_next(next);
+			else {
+				while (NULL != next->next && next->next->available) {
+					spirits_unify_next(next);
+				}
 			}
 
 			break;
@@ -248,7 +278,7 @@ spirits_size(spirits_t* spirits, uint8_t only_this_node) {
 	if (NULL == spirits) return 0;
 
 	if (only_this_node) {
-		return NULL != spirits ? spirits->size : 0;
+		return spirits->size;
 	}
 
 	uint64_t size = 0;
