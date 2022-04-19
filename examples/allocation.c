@@ -37,6 +37,8 @@ int main () {
 		return -1;
 	}
 
+	spirits_print_all(&spirits);
+
 	uint64_t address2 = 0;
 	if (0 == spirits_allocate(&spirits, &address2, 64)) {
 		printf("Allocated %u bytes at offset: %llu\n", 64, address2);
@@ -46,9 +48,14 @@ int main () {
 		return -1;
 	}
 
-	spirits_print_all(&spirits);
-
-	spirits_rift(a, 32);
+	uint64_t address3 = 0;
+	if (0 == spirits_allocate(&spirits, &address3, 40)) {
+		printf("Allocated %u bytes at offset: %llu\n", 40, address3);
+	}
+	else {
+		printf("Allocation error address3:/\n");
+		return -1;
+	}
 
 	spirits_print_all(&spirits);
 
