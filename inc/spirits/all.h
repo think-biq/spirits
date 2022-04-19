@@ -6,7 +6,7 @@
 	^^
 */
 
-#include "common.h"
+#include "core.h"
 #include "allocation.h"
 #include "memory.h"
 #include "print.h"

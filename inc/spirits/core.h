@@ -6,8 +6,8 @@
 	^^
 */
 
-#ifndef _H_SPIRITS_COMMON_H_
-#define _H_SPIRITS_COMMON_H_
+#ifndef _H_SPIRITS_CORE_H_
+#define _H_SPIRITS_CORE_H_
 
 #include <stdint.h>
 
