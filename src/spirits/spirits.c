@@ -57,10 +57,10 @@ spirits_summon(spirits_t* spirits, uint64_t size) {
 		#if defined(_WIN32)
 		HMODULE hModule = GetModuleHandle(TEXT(UCRTBASEDLL_NAME));
 		assert(NULL != hModule && "Could not get module :/");
-		system_malloc = GetProcAddress(hModule, 
+		(FARPROC)system_malloc = GetProcAddress(hModule, 
 			TEXT("malloc")
 		);
-		system_free = GetProcAddress(hModule, 
+		(FARPROC)system_free = GetProcAddress(hModule, 
 			TEXT("free")
 		);
 		#else
