@@ -8,18 +8,22 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <stdint.h>
 #include <signal.h>
 #include <string.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <math.h>
 #include <assert.h>
+#if defined(WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <libloaderapi.h>
+#else
+#include <fcntl.h>
 #include <dlfcn.h> // dlsym
+#endif
 
 #include <spirits/all.h>
 
@@ -50,8 +54,19 @@ __spirits_free(void* memory) {
 uint8_t
 spirits_summon(spirits_t* spirits, uint64_t size) {
 	if (0 == g_system_functions_initialized) {
+		#if defined(WIN32)
+		system_malloc = GetProcAddress(
+			GetModuleHandleA("kernel32"), 
+			"malloc"
+		);
+		system_free = GetProcAddress(
+      		GetModuleHandleA("kernel32"),
+      		"free"
+      	);
+		#else
 		system_malloc = dlsym(RTLD_NEXT, "malloc");
 		system_free = dlsym(RTLD_NEXT, "free");
+		#endif
 		g_system_functions_initialized = 1;
 	}
 
@@ -210,7 +225,7 @@ spirits_allocate(spirits_t* spirits, uint64_t* address, uint64_t size) {
 	spirits_t* s;
 	if (size == fit->size // If it fits exactly,
 	 || SPIRITS_MINIMUM_SIZE > (fit->size - size)) { // or is within min size.
-	 	// Use the found spirit.
+		// Use the found spirit.
 		s = fit;
 	}
 	else {
