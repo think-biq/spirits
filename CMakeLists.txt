@@ -41,6 +41,14 @@ option (BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+if (WIN32)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        ADD_DEFINITIONS(-DUCRTBASEDLL_NAME="ucrtbase.dll")
+    else ()
+        ADD_DEFINITIONS(-DUCRTBASEDLL_NAME="ucrtbased.dll")
+    endif ()
+endif()
+
 if (MSVC)
     # warning level 4 and all warnings as errors
     #add_compile_options(/W4 /WX)
