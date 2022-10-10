@@ -14,9 +14,9 @@
 struct spirits;
 
 void
-spirits_print_all(struct spirits* spirits);
+spirits_print_all (struct spirits* spirits);
 
 void
-spirits_print(struct spirits* spirits, uint8_t newline);
+spirits_print (struct spirits* spirits, uint8_t newline);
 
 #endif

@@ -15,19 +15,27 @@
 #define SPIRITS_MINIMUM_SIZE 1
 #endif
 
+struct spirits;
+
 uint64_t
-spirits_size(spirits_t* spirits, uint8_t only_this_node);
+spirits_size (struct spirits* spirits, uint8_t only_this_node);
 
-spirits_t*
-spirits_rift(spirits_t* spirits, uint64_t requested_size);
+uint64_t
+spirits_size_used (struct spirits* spirits, uint8_t only_this_node);
+
+uint64_t
+spirits_size_free (struct spirits* spirits, uint8_t only_this_node);
+
+struct spirits*
+spirits_rift (struct spirits* spirits, uint64_t requested_size);
 
 uint8_t
-spirits_unify_next(spirits_t* spirits);
+spirits_unify_next (struct spirits* spirits);
 
-spirits_t*
-spirits_find_smallest_fit(spirits_t* spirits, uint64_t size);
+struct spirits*
+spirits_find_smallest_fit (struct spirits* spirits, uint64_t size);
 
 uint8_t
-spirits_condense(spirits_t* spirits);
+spirits_condense (struct spirits* spirits);
 
 #endif

@@ -25,9 +25,9 @@ typedef
 
 
 uint8_t
-spirits_summon(struct spirits* spirits, uint64_t size);
+spirits_summon (struct spirits* spirits, uint64_t size);
 
 void
-spirits_banish(struct spirits* spirits);
+spirits_banish (struct spirits* spirits);
 
 #endif
